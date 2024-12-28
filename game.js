@@ -29,6 +29,9 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
 scene.add(ambientLight);
 
+// TextureLoader initialisieren
+const textureLoader = new THREE.TextureLoader();
+
 // Setze Schattenwürfe für Blöcke und Objekte
 const blockTypes = {
     grass: { texture: textureLoader.load('textures/grass.png') },
@@ -103,7 +106,6 @@ inventoryContainer.style.padding = '10px';
 inventoryContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
 inventoryContainer.style.borderRadius = '10px';
 
-const textureLoader = new THREE.TextureLoader();
 const inventorySlots = Object.keys(blockTypes);
 let selectedSlot = 0;
 
