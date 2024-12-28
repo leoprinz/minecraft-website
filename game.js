@@ -30,6 +30,19 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
 scene.add(ambientLight);
 
 // Setze Schattenwürfe für Blöcke und Objekte
+const blockTypes = {
+    grass: { texture: textureLoader.load('textures/grass.png') },
+    sand: { texture: textureLoader.load('textures/sand.png') },
+    water: { texture: textureLoader.load('textures/water.webp') },
+    stone: { texture: textureLoader.load('textures/stone.png') },
+    wood: { texture: textureLoader.load('textures/wood.png') },
+    dirt: { texture: textureLoader.load('textures/dirt.webp') },
+    lava: { texture: textureLoader.load('textures/lava.webp') },
+    gold: { texture: textureLoader.load('textures/gold.png') },
+    glass: { texture: textureLoader.load('textures/glass.png') },
+    leaves: { texture: textureLoader.load('textures/leaves.png') },
+};
+
 function addBlock(x, y, z, type, textureOverride = null) {
     const geometry = new THREE.BoxGeometry();
     const texture = textureOverride || blockTypes[type].texture;
@@ -91,19 +104,6 @@ inventoryContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
 inventoryContainer.style.borderRadius = '10px';
 
 const textureLoader = new THREE.TextureLoader();
-const blockTypes = {
-    grass: { texture: textureLoader.load('textures/grass.png') },
-    sand: { texture: textureLoader.load('textures/sand.png') },
-    water: { texture: textureLoader.load('textures/water.webp') },
-    stone: { texture: textureLoader.load('textures/stone.png') },
-    wood: { texture: textureLoader.load('textures/wood.png') },
-    dirt: { texture: textureLoader.load('textures/dirt.webp') },
-    lava: { texture: textureLoader.load('textures/lava.webp') },
-    gold: { texture: textureLoader.load('textures/gold.png') },
-    glass: { texture: textureLoader.load('textures/glass.png') },
-    leaves: { texture: textureLoader.load('textures/leaves.png') },
-};
-
 const inventorySlots = Object.keys(blockTypes);
 let selectedSlot = 0;
 
@@ -147,7 +147,6 @@ function generateWorld() {
     for (let x = -worldSize; x < worldSize; x++) {
         for (let z = -worldSize; z < worldSize; z++) {
             addBlock(x, 0, z, 'grass');
-
             if (Math.random() < 0.02) {
                 addTree(x, 1, z);
             }
@@ -156,16 +155,6 @@ function generateWorld() {
 }
 
 const blocks = [];
-function addBlock(x, y, z, type, textureOverride = null) {
-    const geometry = new THREE.BoxGeometry();
-    const texture = textureOverride || blockTypes[type].texture;
-    const material = new THREE.MeshStandardMaterial({ map: texture });
-    const cube = new THREE.Mesh(geometry, material);
-    cube.position.set(x, y, z);
-    scene.add(cube);
-    blocks.push(cube);
-}
-
 function addTree(x, y, z) {
     const trunkHeight = Math.floor(Math.random() * 2) + 4;
     for (let i = 0; i < trunkHeight; i++) {
@@ -199,8 +188,11 @@ const player = {
     velocityY: 0,
     height: 2.5,
     width: 0.1,
+    isCrouching: false,
 };
 const moveSpeed = 0.1;
+const sprintSpeed = 0.2; // Sprintgeschwindigkeit
+const crouchHeight = 1.25; // Hockhöhe
 const jumpSpeed = 0.2;
 const gravity = -0.02;
 let canJump = true;
@@ -226,22 +218,23 @@ function checkCollisions(x, y, z) {
 
 function updatePlayer() {
     let dx = 0, dz = 0;
+    const currentMoveSpeed = keys['Shift'] ? sprintSpeed : moveSpeed;
 
     if (keys['w']) {
-        dx -= moveSpeed * Math.sin(player.yaw);
-        dz -= moveSpeed * Math.cos(player.yaw);
+        dx -= currentMoveSpeed * Math.sin(player.yaw);
+        dz -= currentMoveSpeed * Math.cos(player.yaw);
     }
     if (keys['s']) {
-        dx += moveSpeed * Math.sin(player.yaw);
-        dz += moveSpeed * Math.cos(player.yaw);
+        dx += currentMoveSpeed * Math.sin(player.yaw);
+        dz += currentMoveSpeed * Math.cos(player.yaw);
     }
     if (keys['a']) {
-        dx -= moveSpeed * Math.cos(player.yaw);
-        dz += moveSpeed * Math.sin(player.yaw);
+        dx -= currentMoveSpeed * Math.cos(player.yaw);
+        dz += currentMoveSpeed * Math.sin(player.yaw);
     }
     if (keys['d']) {
-        dx += moveSpeed * Math.cos(player.yaw);
-        dz -= moveSpeed * Math.sin(player.yaw);
+        dx += currentMoveSpeed * Math.cos(player.yaw);
+        dz -= currentMoveSpeed * Math.sin(player.yaw);
     }
 
     const newX = player.x + dx;
@@ -271,6 +264,15 @@ function updatePlayer() {
     if (keys[' '] && canJump) {
         player.velocityY = jumpSpeed;
         canJump = false;
+    }
+
+    // Hocken
+    if (keys['Control']) {
+        player.height = crouchHeight;
+        player.isCrouching = true;
+    } else {
+        player.height = 2.5;
+        player.isCrouching = false;
     }
 
     camera.position.set(player.x, player.y + player.height / 2, player.z);
